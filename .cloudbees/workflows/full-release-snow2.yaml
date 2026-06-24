@@ -1,0 +1,44 @@
+apiVersion: automation.cloudbees.io/v1alpha1
+kind: workflow
+name: full-release-snow2
+on:
+  workflow_dispatch:
+    inputs:
+      manifest:
+        type: string
+        required: true
+        description: This is a system-generated parameter and is required for use in application releases. Refer to https://docs.cloudbees.com/docs/cloudbees-platform/latest/applications/releases#manifest for the expected format
+metadata:
+  stages/v1alpha1:
+    - name: sko-hackers-qa
+      jobs:
+        - sko-hackers-qa
+    - name: sko-hackers-staging
+      jobs:
+        - sko-hackers-staging
+    - name: sko-hackers-prod
+      jobs:
+        - sko-hackers-prod
+jobs:
+  sko-hackers-qa:
+    environment: sko-hackers-qa
+    uses: ./.cloudbees/workflows/deployer.yaml
+    with:
+      manifest: ${{ inputs.manifest }}
+      environment: ${{ job.environment }}
+  sko-hackers-staging:
+    needs:
+      - sko-hackers-qa
+    environment: sko-hackers-staging
+    uses: ./.cloudbees/workflows/deployer.yaml
+    with:
+      manifest: ${{ inputs.manifest }}
+      environment: ${{ job.environment }}
+  sko-hackers-prod:
+    needs:
+      - sko-hackers-staging
+    environment: sko-hackers-prod
+    uses: ./.cloudbees/workflows/deployer.yaml
+    with:
+      manifest: ${{ inputs.manifest }}
+      environment: ${{ job.environment }}
